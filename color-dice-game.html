@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Color Dice - Praktikum Menggambar Teknik</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; display:flex; justify-content:center; align-items:center; padding:20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.95); border-radius:30px; padding:40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width:900px; width:100%; text-align:center;
+        }
+        h1 { color:#2d3748; font-size:2.5em; margin-bottom:10px; text-shadow:2px 2px 4px rgba(0,0,0,0.1); }
+        h2 { color:#667eea; font-size:1.8em; margin-bottom:30px; font-weight:600; }
+
+        /* Main / Pages */
+        #mainPage { display:block; }
+        #questionPage { display:none; }
+
+        .status-bar {
+            display:flex; justify-content:space-around; margin:20px 0; padding:20px;
+            background: rgba(102,126,234,0.1); border-radius:15px;
+        }
+        .status-item { text-align:center; }
+        .status-item .label { font-size:.9em; color:#718096; margin-bottom:5px; }
+        .status-item .value { font-size:1.8em; font-weight:bold; color:#667eea; }
+
+        .dice-wrapper { margin:40px 0; display:flex; justify-content:center; }
+        .dice {
+            width:180px; height:180px; border-radius:25px; display:flex; justify-content:center; align-items:center;
+            font-size:6em; font-weight:bold; color:white; box-shadow:0 15px 40px rgba(0,0,0,0.3); transition:transform .3s;
+            position:relative; overflow:hidden;
+        }
+        .dice.red { background: linear-gradient(135deg,#ff6b6b,#ee5a6f); }
+        .dice.blue { background: linear-gradient(135deg,#4facfe,#00f2fe); }
+        .dice.rolling { animation: roll 0.5s ease-in-out; }
+        @keyframes roll {
+            0%,100%{ transform:rotate(0deg); } 25%{ transform:rotate(90deg) scale(.9); } 50%{ transform:rotate(180deg) scale(1.1); } 75%{ transform:rotate(270deg) scale(.9); }
+        }
+        .dice::before {
+            content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0%,100%{ transform:translate(-50%,-50%) scale(0); opacity:0; } 50%{ transform:translate(0,0) scale(1); opacity:1; }
+        }
+
+        .button-group { display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin:20px 0; }
+        .roll-button {
+            background: linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding:18px 50px;
+            font-size:1.3em; font-weight:bold; border-radius:50px; cursor:pointer;
+            box-shadow:0 10px 30px rgba(102,126,234,0.4); transition:all .3s; text-transform:uppercase; letter-spacing:2px;
+        }
+        .roll-button:hover:not(:disabled) { transform:translateY(-3px); box-shadow:0 15px 40px rgba(102,126,234,0.6); }
+        .roll-button:active { transform:translateY(-1px); }
+        .roll-button:disabled { opacity:0.5; cursor:not-allowed; }
+        .roll-button.open { background: linear-gradient(135deg,#f093fb,#f5576c); }
+        .roll-button.reset { background: linear-gradient(135deg,#fc6c85,#f5576c); padding:12px 30px; font-size:1em; }
+
+        /* Question page */
+        .question-card { background:white; border-radius:20px; padding:40px; box-shadow:0 10px 30px rgba(0,0,0,0.1); margin:30px 0; text-align:left; }
+        .question-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; padding-bottom:20px; border-bottom:3px solid #667eea; }
+        .question-number { font-size:3em; font-weight:bold; color:white; width:80px; height:80px; border-radius:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 5px 15px rgba(0,0,0,0.2); }
+        
+        .difficulty-badge {
+            display:inline-block; padding:8px 20px; border-radius:20px; font-size:0.9em; font-weight:bold;
+            margin-bottom:15px; text-transform:uppercase; letter-spacing:1px;
+        }
+        .difficulty-badge.red { background:linear-gradient(135deg,#ff6b6b,#ee5a6f); color:white; }
+        .difficulty-badge.blue { background:linear-gradient(135deg,#4facfe,#00f2fe); color:white; }
+
+        .question-content { font-size:1.4em; line-height:1.8; color:#2d3748; margin:20px 0; padding:25px; background:#f7fafc; border-radius:15px; border-left:5px solid #667eea; }
+        
+        .image-section {
+            margin:25px 0; padding:25px; background:#f7fafc; border-radius:15px; border:3px solid #ff6b6b;
+            box-shadow:0 5px 20px rgba(255,107,107,0.2);
+        }
+        .image-section h4 { 
+            color:#ff6b6b; margin-bottom:15px; font-size:1.3em; 
+            display:flex; align-items:center; gap:10px;
+        }
+        .question-image {
+            width:100%; max-width:600px; border-radius:10px; 
+            box-shadow:0 8px 25px rgba(0,0,0,0.15); margin-top:15px;
+            border:2px solid #e0e0e0;
+        }
+
+        .answer-buttons { display:flex; gap:20px; justify-content:center; margin:30px 0; }
+        .answer-btn {
+            padding:20px 60px; font-size:1.4em; font-weight:bold; border:none; border-radius:50px; cursor:pointer; color:white;
+            box-shadow:0 10px 30px rgba(0,0,0,0.3); transition:all .3s; text-transform:uppercase; letter-spacing:2px;
+        }
+        .answer-btn.correct { background: linear-gradient(135deg,#11998e,#38ef7d); }
+        .answer-btn.wrong { background: linear-gradient(135deg,#eb3349,#f45c43); }
+        .answer-btn:hover { transform:translateY(-3px); box-shadow:0 15px 40px rgba(0,0,0,0.4); }
+        .answer-btn:active { transform:translateY(-1px); }
+
+        /* Modal */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; }
+        .modal.show { display:flex; }
+        .modal-content { background:white; padding:50px; border-radius:30px; text-align:center; max-width:500px; box-shadow:0 20px 60px rgba(0,0,0,0.5); animation: modalPop .3s ease-out; }
+        @keyframes modalPop { 0%{ transform:scale(.7); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+        .modal-icon { font-size:5em; margin-bottom:20px; }
+        .modal-title { font-size:2.5em; font-weight:bold; margin-bottom:15px; }
+        .modal-content.correct .modal-title { color:#11998e; }
+        .modal-content.wrong .modal-title { color:#eb3349; }
+        .modal-text { font-size:1.2em; color:#718096; margin-bottom:30px; }
+        .modal-btn {
+            background: linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding:15px 40px; font-size:1.2em; font-weight:bold; border-radius:50px; cursor:pointer;
+            box-shadow:0 10px 30px rgba(102,126,234,0.4); transition:all .3s;
+        }
+
+        .info { margin-top:30px; padding:20px; background: linear-gradient(135deg,#f093fb,#f5576c); border-radius:15px; color:white; }
+        .info h3 { margin-bottom:10px; font-size:1.3em; }
+        .info p { line-height:1.6; }
+
+        .used-numbers { display:flex; gap:10px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
+        .used-number {
+            width:50px; height:50px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.5em; font-weight:bold; color:white;
+            box-shadow:0 5px 15px rgba(0,0,0,0.2); position:relative;
+        }
+        .used-number.red { background: linear-gradient(135deg,#ff6b6b,#ee5a6f); }
+        .used-number.blue { background: linear-gradient(135deg,#4facfe,#00f2fe); }
+        .used-number::after { content:'✓'; position:absolute; top:-5px; right:-5px; background:#11998e; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7em; }
+
+        @media (max-width:600px) {
+            h1 { font-size:1.8em; } h2 { font-size:1.3em; } .dice { width:140px; height:140px; font-size:4.5em; } .roll-button { padding:15px 35px; font-size:1.1em; } .question-card { padding:25px; } .answer-btn { padding:15px 40px; font-size:1.2em; } .modal-content { padding:35px; } .button-group { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Page -->
+        <div id="mainPage">
+            <h1>Praktikum Menggambar Teknik</h1>
+            <h2>🎲 Color Dice 🎲</h2>
+
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="label">Soal Terjawab</div>
+                    <div class="value" id="answeredCount">0/6</div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Angka Sekarang</div>
+                    <div class="value" id="currentNumber">-</div>
+                </div>
+            </div>
+
+            <div class="dice-wrapper">
+                <div id="mainDice" class="dice red">?</div>
+            </div>
+
+            <div class="button-group">
+                <button class="roll-button" onclick="rollDice()" id="rollBtn">🎲 Kocok Dadu 🎲</button>
+                <button class="roll-button open" onclick="openQuestion()" id="openBtn" style="display:none;">📖 Buka Soal 📖</button>
+            </div>
+
+            <div id="usedNumbersSection" style="display:none;">
+                <h3 style="color:#2d3748; margin:20px 0;">Angka yang Sudah Keluar:</h3>
+                <div class="used-numbers" id="usedNumbers"></div>
+            </div>
+
+            <button class="roll-button reset" onclick="resetGame()" style="margin-top:20px;">🔄 Reset Game</button>
+
+            <div class="info">
+                <h3>📋 Cara Bermain</h3>
+                <p>
+                    1. Klik <strong>"Kocok Dadu"</strong> untuk mendapatkan angka random (1-6)<br>
+                    2. Klik <strong>"Buka Soal"</strong> untuk melihat pertanyaan<br>
+                    3. <strong style="color:#ff6b6b;">Soal Merah (Sulit)</strong>: Akan menampilkan gambar sebagai bagian dari soal<br>
+                    4. <strong style="color:#4facfe;">Soal Biru (Normal)</strong>: Soal teks biasa<br>
+                    5. Pilih jawaban: <strong style="color:#11998e;">BENAR (Hijau)</strong> atau <strong style="color:#eb3349;">SALAH (Merah)</strong><br>
+                    6. Angka yang sudah keluar tidak akan muncul lagi<br>
+                    7. Selesaikan semua 6 soal untuk menang!
+                </p>
+            </div>
+        </div>
+
+        <!-- Question Page -->
+        <div id="questionPage">
+            <div class="question-card">
+                <div class="question-header">
+                    <div>
+                        <h2 style="margin:0;">Soal Nomor <span id="currentQuestionNum"></span></h2>
+                        <div class="difficulty-badge" id="difficultyBadge">Soal Sulit</div>
+                    </div>
+                    <div class="question-number" id="questionNumberBox">1</div>
+                </div>
+
+                <!-- Image Section (hanya untuk soal merah) -->
+                <div class="image-section" id="imageSection" style="display:none;">
+                    <h4>
+                        <span>🖼️</span>
+                        <span>Gambar Soal</span>
+                    </h4>
+                    <img id="questionImage" class="question-image" alt="Gambar Soal">
+                </div>
+
+                <div class="question-content" id="questionText"></div>
+
+                <div class="answer-buttons">
+                    <button class="answer-btn correct" id="btnCorrect" onclick="answerQuestion(true)">✓ BENAR</button>
+                    <button class="answer-btn wrong" id="btnWrong" onclick="answerQuestion(false)">✗ SALAH</button>
+                </div>
+            </div>
+
+            <button class="roll-button" onclick="backToMain()">⬅️ Kembali</button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content" id="modalContent">
+            <div class="modal-icon" id="modalIcon"></div>
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-text" id="modalText"></div>
+            <button class="modal-btn" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Data soal dengan gambar untuk soal merah (angka ganjil)
+        const questions = [
+            { 
+                no: 1, 
+                warna: "Merah", 
+                soal: "Apa itu garis?",
+                gambar: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&h=400&fit=crop" // Contoh gambar garis teknik
+            },
+            { 
+                no: 2, 
+                warna: "Biru", 
+                soal: "Apa itu toleransi?" 
+            },
+            { 
+                no: 3, 
+                warna: "Merah", 
+                soal: "Apa itu proyeksi?",
+                gambar: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&h=400&fit=crop" // Contoh gambar proyeksi
+            },
+            { 
+                no: 4, 
+                warna: "Biru", 
+                soal: "Apa itu gamtek?" 
+            },
+            { 
+                no: 5, 
+                warna: "Merah", 
+                soal: "Apa itu Autocad?",
+                gambar: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=400&fit=crop" // Contoh gambar AutoCAD
+            },
+            { 
+                no: 6, 
+                warna: "Biru", 
+                soal: "Apa itu Slicing?" 
+            }
+        ];
+
+        let usedNumbers = new Set();
+        let currentNumber = null;
+        let availableNumbers = [1,2,3,4,5,6];
+
+        function rollDice() {
+            if (usedNumbers.size === 6) {
+                showResultModal(false, 'Game Selesai!', 'Anda telah menyelesaikan semua soal! Klik Reset untuk bermain lagi.');
+                return;
+            }
+
+            const dice = document.getElementById('mainDice');
+            const rollBtn = document.getElementById('rollBtn');
+            const openBtn = document.getElementById('openBtn');
+
+            rollBtn.disabled = true;
+            openBtn.style.display = 'none';
+            dice.classList.add('rolling');
+
+            availableNumbers = [1,2,3,4,5,6].filter(n => !usedNumbers.has(n));
+
+            let rollCount = 0;
+            const rollInterval = setInterval(() => {
+                const tempValue = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+                updateDiceDisplay(dice, tempValue);
+                rollCount++;
+
+                if (rollCount >= 12) {
+                    clearInterval(rollInterval);
+                    const finalValue = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+                    updateDiceDisplay(dice, finalValue);
+                    currentNumber = finalValue;
+
+                    setTimeout(() => {
+                        dice.classList.remove('rolling');
+                        rollBtn.disabled = false;
+                        openBtn.style.display = 'inline-block';
+                        updateStatus();
+                    }, 120);
+                }
+            }, 80);
+        }
+
+        function updateDiceDisplay(dice, value) {
+            if (value === undefined || value === null) {
+                dice.textContent = '?';
+                dice.classList.remove('red','blue');
+                dice.classList.add('red');
+                return;
+            }
+            dice.textContent = value;
+            if (value % 2 === 1) {
+                dice.classList.remove('blue');
+                dice.classList.add('red');
+            } else {
+                dice.classList.remove('red');
+                dice.classList.add('blue');
+            }
+        }
+
+        function openQuestion() {
+            if (!currentNumber) return;
+            const question = questions.find(q => q.no === currentNumber);
+            if (!question) {
+                alert('Soal untuk angka ini tidak ditemukan.');
+                return;
+            }
+
+            document.getElementById('mainPage').style.display = 'none';
+            document.getElementById('questionPage').style.display = 'block';
+
+            document.getElementById('currentQuestionNum').textContent = currentNumber;
+            document.getElementById('questionNumberBox').textContent = currentNumber;
+            document.getElementById('questionText').textContent = question.soal;
+
+            const numBox = document.getElementById('questionNumberBox');
+            const isRedQuestion = currentNumber % 2 === 1;
+            
+            numBox.style.background = isRedQuestion ? 'linear-gradient(135deg,#ff6b6b,#ee5a6f)' : 'linear-gradient(135deg,#4facfe,#00f2fe)';
+
+            // Set difficulty badge
+            const badge = document.getElementById('difficultyBadge');
+            badge.textContent = isRedQuestion ? '🔥 Soal Sulit' : '💧 Soal Normal';
+            badge.className = 'difficulty-badge ' + (isRedQuestion ? 'red' : 'blue');
+
+            // Show/hide image section dan set gambar
+            const imageSection = document.getElementById('imageSection');
+            const questionImage = document.getElementById('questionImage');
+            
+            if (isRedQuestion && question.gambar) {
+                imageSection.style.display = 'block';
+                questionImage.src = question.gambar;
+            } else {
+                imageSection.style.display = 'none';
+                questionImage.src = '';
+            }
+
+            document.getElementById('btnCorrect').disabled = false;
+            document.getElementById('btnWrong').disabled = false;
+        }
+
+        function answerQuestion(isCorrect) {
+            if (!currentNumber) return;
+            if (usedNumbers.has(currentNumber)) {
+                showResultModal(false, 'Sudah Terjawab', 'Nomor ini sudah ditandai sebagai terjawab.');
+                return;
+            }
+
+            usedNumbers.add(currentNumber);
+            updateStatus();
+            updateUsedNumbers();
+            saveProgress();
+
+            document.getElementById('btnCorrect').disabled = true;
+            document.getElementById('btnWrong').disabled = true;
+
+            if (isCorrect) {
+                showResultModal(true, '✓ BENAR!', 'Selamat! Jawaban Anda benar.');
+            } else {
+                showResultModal(false, '✗ SALAH!', 'Maaf, jawaban Anda salah. Coba lagi di soal berikutnya!');
+            }
+        }
+
+        function showResultModal(isCorrect, title, text) {
+            const modal = document.getElementById('resultModal');
+            const modalContent = document.getElementById('modalContent');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalText = document.getElementById('modalText');
+
+            if (isCorrect) {
+                modalContent.className = 'modal-content correct';
+                modalIcon.textContent = '✓';
+            } else {
+                modalContent.className = 'modal-content wrong';
+                modalIcon.textContent = '✗';
+            }
+
+            modalTitle.textContent = title;
+            modalText.textContent = text;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+            backToMain();
+            if (usedNumbers.size === 6) {
+                setTimeout(() => {
+                    showResultModal(false, 'Semua Soal Selesai', 'Selamat! Anda telah menyelesaikan semua soal. Klik Reset untuk bermain lagi.');
+                }, 300);
+            }
+        }
+
+        function backToMain() {
+            document.getElementById('mainPage').style.display = 'block';
+            document.getElementById('questionPage').style.display = 'none';
+            document.getElementById('openBtn').style.display = 'none';
+            currentNumber = null;
+            updateStatus();
+            updateUsedNumbers();
+            if (!currentNumber) {
+                updateDiceDisplay(document.getElementById('mainDice'), null);
+            }
+        }
+
+        function updateStatus() {
+            document.getElementById('answeredCount').textContent = usedNumbers.size + '/6';
+            document.getElementById('currentNumber').textContent = currentNumber || '-';
+        }
+
+        function updateUsedNumbers() {
+            const container = document.getElementById('usedNumbers');
+            const section = document.getElementById('usedNumbersSection');
+
+            if (usedNumbers.size === 0) {
+                section.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            section.style.display = 'block';
+            container.innerHTML = '';
+            const sorted = Array.from(usedNumbers).sort((a,b)=>a-b);
+            sorted.forEach(num => {
+                const box = document.createElement('div');
+                box.className = 'used-number ' + (num % 2 === 1 ? 'red' : 'blue');
+                box.textContent = num;
+                container.appendChild(box);
+            });
+        }
+
+        function saveProgress() {
+            localStorage.setItem('colorDiceUsedNumbers', JSON.stringify([...usedNumbers]));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('colorDiceUsedNumbers');
+            if (saved) {
+                try {
+                    usedNumbers = new Set(JSON.parse(saved));
+                } catch(e) {
+                    usedNumbers = new Set();
+                }
+            }
+            updateStatus();
+            updateUsedNumbers();
+        }
+
+        function resetGame() {
+            if (!confirm('Reset game? Semua progress akan hilang!')) return;
+            usedNumbers.clear();
+            currentNumber = null;
+            availableNumbers = [1,2,3,4,5,6];
+            localStorage.removeItem('colorDiceUsedNumbers');
+            updateStatus();
+            updateUsedNumbers();
+            updateDiceDisplay(document.getElementById('mainDice'), null);
+            document.getElementById('openBtn').style.display = 'none';
+            alert('Game telah direset! Selamat bermain lagi!');
+        }
+
+        window.onload = () => {
+            loadProgress();
+            updateDiceDisplay(document.getElementById('mainDice'), null);
+        };
+    </script>
+</body>
+</html>
